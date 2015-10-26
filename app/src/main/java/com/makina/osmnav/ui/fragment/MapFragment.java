@@ -45,16 +45,17 @@ public class MapFragment
 
     private static final String TAG = MapFragment.class.getName();
 
-    private static final int TILE_SIZE = 256;
+    // FIXME: hardcoded tile size (in px)
+    private static final int TILE_SIZE = 512;
 
     // FIXME: hardcoded default MBTiles source to load
-    private static final String MBTILES_FILE = "example.mbtiles";
+    private static final String MBTILES_FILE = "garedelyon.mbtiles";
 
     // FIXME: hardcoded bounding box
-    private static final BoundingBoxE6 MBTILES_BOUNDING_BOX = new BoundingBoxE6(-17.784733,
-                                                                                30.967541,
-                                                                                -17.824980,
-                                                                                30.885143);
+    private static final BoundingBoxE6 MBTILES_BOUNDING_BOX = new BoundingBoxE6(48.8487,
+                                                                                2.3866,
+                                                                                48.8368,
+                                                                                2.3664);
 
     private static final String STATE_MAP_POSITION = "STATE_MAP_POSITION";
     private static final String STATE_MAP_ZOOM_LEVEL = "STATE_MAP_ZOOM_LEVEL";
@@ -152,6 +153,7 @@ public class MapFragment
         }
 
         mapView.setMultiTouchControls(true);
+        mapView.setTilesScaledToDpi(false);
 
         if (BuildConfig.DEBUG) {
             mapView.setMapListener(new MapListener() {
@@ -194,7 +196,7 @@ public class MapFragment
         return new XYTileSource("mbtiles",
                                 ResourceProxy.string.offline_mode,
                                 0,
-                                18,
+                                21, // FIXME: hardcoded max zoom (should be read from the MBTiles)
                                 TILE_SIZE,
                                 ".png",
                                 new String[] {
