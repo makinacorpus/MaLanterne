@@ -1,6 +1,7 @@
 package com.makina.osmnav.ui.fragment;
 
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -55,6 +56,14 @@ public class MapFragment
                                                                                 -17.824980,
                                                                                 30.885143);
 
+    private static final String STATE_MAP_POSITION = "STATE_MAP_POSITION";
+    private static final String STATE_MAP_ZOOM_LEVEL = "STATE_MAP_ZOOM_LEVEL";
+
+    private MapView mMapView;
+
+    private IGeoPoint mMapCenter;
+    private int mZoomLevel;
+
     public MapFragment() {
         // required empty public constructor
     }
@@ -74,12 +83,39 @@ public class MapFragment
         return fragment;
     }
 
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        if (savedInstanceState == null) {
+            mMapCenter = MBTILES_BOUNDING_BOX.getCenter();
+            // FIXME: default hardcoded zoom level
+            mZoomLevel = 14;
+        }
+        else {
+            mMapCenter = savedInstanceState.getParcelable(STATE_MAP_POSITION);
+            mZoomLevel = savedInstanceState.getInt(STATE_MAP_ZOOM_LEVEL);
+        }
+    }
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater,
                              ViewGroup container,
                              Bundle savedInstanceState) {
-        return setupMap();
+        mMapView = setupMap();
+
+        return mMapView;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        outState.putParcelable(STATE_MAP_POSITION,
+                               (Parcelable) mMapView.getMapCenter());
+        outState.putInt(STATE_MAP_ZOOM_LEVEL,
+                        mMapView.getZoomLevel());
+
+        super.onSaveInstanceState(outState);
     }
 
     private MapView setupMap() {
@@ -146,8 +182,8 @@ public class MapFragment
         }
 
         final IMapController mapController = mapView.getController();
-        mapController.setZoom(14);
-        mapController.setCenter(MBTILES_BOUNDING_BOX.getCenter());
+        mapController.setCenter(mMapCenter);
+        mapController.setZoom(mZoomLevel);
 
         return mapView;
     }
