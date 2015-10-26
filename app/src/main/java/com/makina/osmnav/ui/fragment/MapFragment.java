@@ -13,15 +13,13 @@ import android.widget.Toast;
 
 import com.makina.osmnav.BuildConfig;
 import com.makina.osmnav.R;
+import com.makina.osmnav.ui.map.MapLoggerListener;
 import com.makina.osmnav.util.FileUtils;
 
 import org.osmdroid.DefaultResourceProxyImpl;
 import org.osmdroid.ResourceProxy;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.api.IMapController;
-import org.osmdroid.events.MapListener;
-import org.osmdroid.events.ScrollEvent;
-import org.osmdroid.events.ZoomEvent;
 import org.osmdroid.tileprovider.MapTileProviderArray;
 import org.osmdroid.tileprovider.modules.IArchiveFile;
 import org.osmdroid.tileprovider.modules.MBTilesFileArchive;
@@ -127,7 +125,7 @@ public class MapFragment
         final MapTileModuleProviderBase mbTilesProvider = getMBTilesProvider(MBTILES_FILE);
 
         if (mbTilesProvider == null) {
-            // failed to load the MBtiles as file, use the default configuration
+            // failed to load the MBTiles as file, use the default configuration
             mapView = new MapView(getContext(),
                                   TILE_SIZE,
                                   resourceProxy);
@@ -156,31 +154,7 @@ public class MapFragment
         mapView.setTilesScaledToDpi(false);
 
         if (BuildConfig.DEBUG) {
-            mapView.setMapListener(new MapListener() {
-                @Override
-                public boolean onScroll(ScrollEvent event) {
-                    final IGeoPoint geoPoint = mapView.getMapCenter();
-
-                    if (BuildConfig.DEBUG) {
-                        Log.d(TAG,
-                              "onScroll: " + "[lat=" + geoPoint.getLatitude() + ", lon=" + geoPoint.getLongitude() + ", zoom=" + mapView.getZoomLevel());
-                    }
-
-                    return false;
-                }
-
-                @Override
-                public boolean onZoom(ZoomEvent event) {
-                    final IGeoPoint geoPoint = mapView.getMapCenter();
-
-                    if (BuildConfig.DEBUG) {
-                        Log.d(TAG,
-                              "onZoom: " + "[lat=" + geoPoint.getLatitude() + ", lon=" + geoPoint.getLongitude() + ", zoom=" + mapView.getZoomLevel());
-                    }
-
-                    return false;
-                }
-            });
+            new MapLoggerListener(mapView);
         }
 
         final IMapController mapController = mapView.getController();
