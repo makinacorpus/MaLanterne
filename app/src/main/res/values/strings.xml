@@ -2,7 +2,7 @@
     <string name="app_name">OSMNav</string>
     <string name="action_settings">Settings</string>
 
-    <string name="toast_mbtiles_load_failed">Unable to load MBTiles \'%1$s\'</string>
+    <string name="toast_mbtiles_load_failed">Unable to load MBTiles</string>
     <string name="toast_geopoint">GeoPoint: %1$s</string>
 
 </resources>
