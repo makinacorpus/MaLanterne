@@ -5,6 +5,7 @@ import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,6 +17,7 @@ import com.makina.osmnav.R;
 import com.makina.osmnav.map.MBTilesModuleProvider;
 import com.makina.osmnav.map.MBTilesProvider;
 import com.makina.osmnav.map.MapLoggerListener;
+import com.makina.osmnav.ui.widget.LevelsFilterNavigationListView;
 import com.makina.osmnav.util.FileUtils;
 
 import org.osmdroid.DefaultResourceProxyImpl;
@@ -32,6 +34,7 @@ import org.osmdroid.views.MapView;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -161,6 +164,18 @@ public class MapFragment
                                   providers);
 
             mapView.setScrollableAreaLimit(MBTILES_BOUNDING_BOX);
+
+            final LevelsFilterNavigationListView levelsFilterNavigationListView = new LevelsFilterNavigationListView(((AppCompatActivity) getActivity()).getSupportActionBar());
+            levelsFilterNavigationListView.setLevelsFilterViewCallback(new LevelsFilterNavigationListView.LevelsFilterViewCallback() {
+                @Override
+                public void onLevelSelected(double level) {
+                    providers.setSelectedIndoorLevel(level);
+                    mapView.invalidate();
+                }
+            });
+            // FIXME: hardcoded available levels
+            levelsFilterNavigationListView.setLevels(Arrays.asList(0d,
+                                                                   -1d));
         }
 
         mapView.setMultiTouchControls(true);
@@ -189,18 +204,32 @@ public class MapFragment
     private List<MapTileModuleProviderBase> loadModuleProviders() {
         final List<MapTileModuleProviderBase> moduleProviders = new ArrayList<>();
 
-        final MapTileModuleProviderBase defaultMBTilesProvider = getMBTilesProvider("garedelyon.mbtiles",
-                                                                             null);
+        // FIXME: hardcoded MBTiles sources
+        final List<String> mbTilesSources = Arrays.asList("gdl.mbtiles",
+                                                          "gdl_0.0.mbtiles",
+                                                          "gdl_-1.0.mbtiles");
 
-        if (defaultMBTilesProvider != null) {
-            moduleProviders.add(defaultMBTilesProvider);
-        }
+        for (String mbTilesSource : mbTilesSources) {
+            Double level = null;
+            final String[] tokens = mbTilesSource.split("_");
 
-        final MapTileModuleProviderBase mbTilesProviderLevel0 = getMBTilesProvider("gdl_0.mbtiles",
-                                                                                   0.0d);
+            if (tokens.length > 1) {
+                final String levelsAsString = tokens[1].split(".mbtiles")[0];
 
-        if (mbTilesProviderLevel0 != null) {
-            moduleProviders.add(mbTilesProviderLevel0);
+                try {
+                    level = Double.valueOf(levelsAsString);
+                }
+                catch (NumberFormatException nfe) {
+                    Log.w(TAG,
+                          nfe.getMessage());
+                }
+            }
+
+            final MapTileModuleProviderBase moduleProvider = getMBTilesProvider(mbTilesSource,
+                                                                                level);
+            if (moduleProvider != null) {
+                moduleProviders.add(moduleProvider);
+            }
         }
 
         return moduleProviders;
@@ -220,7 +249,7 @@ public class MapFragment
         }
 
         final MBTilesModuleProvider moduleProvider = new MBTilesModuleProvider(new SimpleRegisterReceiver(getContext()),
-                                                                                      mbtiles);
+                                                                               mbtiles);
         moduleProvider.setIndoorLevel(indoorLevel);
 
         return moduleProvider;
