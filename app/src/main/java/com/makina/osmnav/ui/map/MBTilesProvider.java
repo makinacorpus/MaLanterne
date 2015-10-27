@@ -63,6 +63,18 @@ public class MBTilesProvider
     }
 
     @Override
+    public int getMaximumZoomLevel() {
+        // compute the maximum level from all registered providers
+        int maximumZoomLevel = super.getMaximumZoomLevel();
+
+        // check the default maximum level from the default tiles source
+        maximumZoomLevel = Math.min(getTileSource().getMaximumZoomLevel(),
+                                    maximumZoomLevel);
+
+        return maximumZoomLevel;
+    }
+
+    @Override
     protected MapTileModuleProviderBase findNextAppropriateProvider(MapTileRequestState aState) {
         MapTileModuleProviderBase provider = null;
 
