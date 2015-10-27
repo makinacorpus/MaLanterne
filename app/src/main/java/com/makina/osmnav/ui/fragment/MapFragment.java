@@ -13,9 +13,9 @@ import android.widget.Toast;
 
 import com.makina.osmnav.BuildConfig;
 import com.makina.osmnav.R;
-import com.makina.osmnav.ui.map.MBTilesModuleProvider;
-import com.makina.osmnav.ui.map.MBTilesProvider;
-import com.makina.osmnav.ui.map.MapLoggerListener;
+import com.makina.osmnav.map.MBTilesModuleProvider;
+import com.makina.osmnav.map.MBTilesProvider;
+import com.makina.osmnav.map.MapLoggerListener;
 import com.makina.osmnav.util.FileUtils;
 
 import org.osmdroid.DefaultResourceProxyImpl;

@@ -1,4 +1,4 @@
-package com.makina.osmnav.ui.map;
+package com.makina.osmnav.map;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;

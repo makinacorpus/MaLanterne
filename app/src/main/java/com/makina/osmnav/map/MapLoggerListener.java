@@ -1,4 +1,4 @@
-package com.makina.osmnav.ui.map;
+package com.makina.osmnav.map;
 
 import android.support.annotation.NonNull;
 import android.util.Log;
