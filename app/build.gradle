@@ -29,6 +29,14 @@ android {
     }
 }
 
+repositories {
+    mavenCentral()
+    flatDir {
+        dirs 'libs'
+    }
+}
+
+
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
@@ -37,6 +45,10 @@ dependencies {
 
     compile 'org.osmdroid:osmdroid-android:4.3'
     compile 'org.slf4j:slf4j-simple:1.6.1'
+
+    compile(name:'osmbonuspack_v5.4', ext:'aar')
+    compile 'org.apache.commons:commons-lang3:3.3.2'
+    compile 'com.google.code.gson:gson:2.3'
 
     testCompile 'junit:junit:4.12'
 }

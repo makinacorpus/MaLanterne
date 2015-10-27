@@ -20,6 +20,8 @@ import org.osmdroid.DefaultResourceProxyImpl;
 import org.osmdroid.ResourceProxy;
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.api.IMapController;
+import org.osmdroid.bonuspack.overlays.MapEventsOverlay;
+import org.osmdroid.bonuspack.overlays.MapEventsReceiver;
 import org.osmdroid.tileprovider.MapTileProviderArray;
 import org.osmdroid.tileprovider.modules.IArchiveFile;
 import org.osmdroid.tileprovider.modules.MBTilesFileArchive;
@@ -29,6 +31,7 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.tileprovider.tilesource.XYTileSource;
 import org.osmdroid.tileprovider.util.SimpleRegisterReceiver;
 import org.osmdroid.util.BoundingBoxE6;
+import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 
 import java.io.File;
@@ -39,7 +42,8 @@ import java.io.File;
  * @author <a href="mailto:sebastien.grimault@makina-corpus.com">S. Grimault</a>
  */
 public class MapFragment
-        extends Fragment {
+        extends Fragment
+        implements MapEventsReceiver {
 
     private static final String TAG = MapFragment.class.getName();
 
@@ -117,6 +121,22 @@ public class MapFragment
         super.onSaveInstanceState(outState);
     }
 
+    @Override
+    public boolean singleTapConfirmedHelper(GeoPoint geoPoint) {
+        return false;
+    }
+
+    @Override
+    public boolean longPressHelper(GeoPoint geoPoint) {
+        Toast.makeText(getContext(),
+                       getString(R.string.toast_geopoint,
+                                 "lat= " + geoPoint.getLatitude() + ", lon=" + geoPoint.getLongitude()),
+                       Toast.LENGTH_LONG)
+             .show();
+
+        return true;
+    }
+
     private MapView setupMap() {
         final MapView mapView;
 
@@ -161,6 +181,13 @@ public class MapFragment
         mapController.setCenter(mMapCenter);
         mapController.setZoom(mZoomLevel);
 
+        final MapEventsOverlay mapEventsOverlay = new MapEventsOverlay(getContext(),
+                                                                       this);
+
+        mapView.getOverlays()
+               .add(0,
+                    mapEventsOverlay);
+
         return mapView;
     }
 
@@ -170,7 +197,8 @@ public class MapFragment
         return new XYTileSource("mbtiles",
                                 ResourceProxy.string.offline_mode,
                                 0,
-                                21, // FIXME: hardcoded max zoom (should be read from the MBTiles)
+                                // FIXME: hardcoded max zoom (should be read from the MBTiles)
+                                21,
                                 TILE_SIZE,
                                 ".png",
                                 new String[] {
