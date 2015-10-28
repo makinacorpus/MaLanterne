@@ -1,5 +1,6 @@
 package com.makina.osmnav.ui.fragment;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
@@ -31,6 +32,7 @@ import org.osmdroid.tileprovider.util.SimpleRegisterReceiver;
 import org.osmdroid.util.BoundingBoxE6;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.TilesOverlay;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -91,7 +93,7 @@ public class MapFragment
         if (savedInstanceState == null) {
             mMapCenter = MBTILES_BOUNDING_BOX.getCenter();
             // FIXME: default hardcoded zoom level
-            mZoomLevel = 14;
+            mZoomLevel = 15;
         }
         else {
             mMapCenter = savedInstanceState.getParcelable(STATE_MAP_POSITION);
@@ -139,9 +141,12 @@ public class MapFragment
         final MapView mapView;
 
         final DefaultResourceProxyImpl resourceProxy = new DefaultResourceProxyImpl(getContext().getApplicationContext());
-        final List<MapTileModuleProviderBase> moduleProviders = loadModuleProviders();
 
-        if (moduleProviders.isEmpty()) {
+        // FIXME: hardcoded default MBTiles source
+        final MapTileModuleProviderBase baseModuleProvider = getMBTilesProvider("gdl.mbtiles",
+                                                                                null);
+
+        if (baseModuleProvider == null) {
             // failed to load the MBTiles as file, use the default configuration
             mapView = new MapView(getContext(),
                                   TILE_SIZE,
@@ -154,28 +159,52 @@ public class MapFragment
                  .show();
         }
         else {
-            final MBTilesProvider providers = MBTilesProvider.createFromProviders(TILE_SIZE,
-                                                                                  moduleProviders.toArray(new MapTileModuleProviderBase[moduleProviders.size()]));
-            providers.setSelectedIndoorLevel(0.0d);
+            final MBTilesProvider baseProviders = MBTilesProvider.createFromProviders(TILE_SIZE,
+                                                                                  baseModuleProvider);
+            baseProviders.setSelectedIndoorLevel(0.0d);
 
             mapView = new MapView(getContext(),
                                   TILE_SIZE,
                                   resourceProxy,
-                                  providers);
+                                  baseProviders);
 
             mapView.setScrollableAreaLimit(MBTILES_BOUNDING_BOX);
 
-            final LevelsFilterNavigationListView levelsFilterNavigationListView = new LevelsFilterNavigationListView(((AppCompatActivity) getActivity()).getSupportActionBar());
-            levelsFilterNavigationListView.setLevelsFilterViewCallback(new LevelsFilterNavigationListView.LevelsFilterViewCallback() {
-                @Override
-                public void onLevelSelected(double level) {
-                    providers.setSelectedIndoorLevel(level);
-                    mapView.invalidate();
-                }
-            });
-            // FIXME: hardcoded available levels
-            levelsFilterNavigationListView.setLevels(Arrays.asList(0d,
-                                                                   -1d));
+            final List<MapTileModuleProviderBase> levelModuleProviders = loadLevelModuleProviders();
+
+            if (!levelModuleProviders.isEmpty()) {
+                final MBTilesProvider levelProviders = MBTilesProvider.createFromProviders(TILE_SIZE,
+                                                                                           levelModuleProviders.toArray(new MapTileModuleProviderBase[levelModuleProviders.size()]));
+                levelProviders.setSelectedIndoorLevel(0.0d);
+
+                final TilesOverlay tilesOverlay = new TilesOverlay(levelProviders,
+                                                                   getContext());
+                tilesOverlay.setLoadingBackgroundColor(Color.TRANSPARENT);
+                mapView.getOverlays()
+                       .add(tilesOverlay);
+
+                final LevelsFilterNavigationListView levelsFilterNavigationListView = new LevelsFilterNavigationListView(((AppCompatActivity) getActivity()).getSupportActionBar());
+                levelsFilterNavigationListView.setLevelsFilterViewCallback(new LevelsFilterNavigationListView.LevelsFilterViewCallback() {
+                    @Override
+                    public void onLevelSelected(double level) {
+                        levelProviders.setSelectedIndoorLevel(level);
+                        mapView.invalidate();
+                        mapView.getController()
+                               .animateTo(mMapView.getMapCenter());
+
+                    }
+                });
+                // FIXME: hardcoded available levels
+                levelsFilterNavigationListView.setLevels(Arrays.asList(2d,
+                                                                       1d,
+                                                                       0d,
+                                                                       -0.25d,
+                                                                       -0.5d,
+                                                                       -0.75d,
+                                                                       -1d,
+                                                                       -2d,
+                                                                       -3d));
+            }
         }
 
         mapView.setMultiTouchControls(true);
@@ -201,13 +230,19 @@ public class MapFragment
     }
 
     @NonNull
-    private List<MapTileModuleProviderBase> loadModuleProviders() {
+    private List<MapTileModuleProviderBase> loadLevelModuleProviders() {
         final List<MapTileModuleProviderBase> moduleProviders = new ArrayList<>();
 
         // FIXME: hardcoded MBTiles sources
-        final List<String> mbTilesSources = Arrays.asList("gdl.mbtiles",
+        final List<String> mbTilesSources = Arrays.asList("gdl_2.0.mbtiles",
+                                                          "gdl_1.0.mbtiles",
                                                           "gdl_0.0.mbtiles",
-                                                          "gdl_-1.0.mbtiles");
+                                                          "gdl_-0.25.mbtiles",
+                                                          "gdl_-0.5.mbtiles",
+                                                          "gdl_-0.75.mbtiles",
+                                                          "gdl_-1.0.mbtiles",
+                                                          "gdl_-2.0.mbtiles",
+                                                          "gdl_-3.0.mbtiles");
 
         for (String mbTilesSource : mbTilesSources) {
             Double level = null;
