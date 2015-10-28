@@ -140,7 +140,7 @@ public class LevelsFilterNavigationListView
     private class LevelAdapter
             extends ArrayAdapter<Double> {
 
-        private final DecimalFormat levelFormat = new DecimalFormat("0.#");
+        private final DecimalFormat levelFormat = new DecimalFormat("0.##");
 
         public LevelAdapter(Context context) {
             super(context,

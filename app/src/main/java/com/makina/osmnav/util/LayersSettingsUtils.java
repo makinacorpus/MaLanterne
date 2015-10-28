@@ -8,6 +8,7 @@ import android.util.Log;
 
 import com.google.gson.stream.JsonReader;
 import com.makina.osmnav.model.LayerSource;
+import com.makina.osmnav.model.LayersSettings;
 import com.makina.osmnav.model.LayersSource;
 
 import org.osmdroid.util.BoundingBoxE6;
@@ -17,24 +18,26 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * Helper class about {@link com.makina.osmnav.model.LayersSource}.
+ * Helper class about {@link LayersSettings}.
  *
  * @author <a href="mailto:sebastien.grimault@makina-corpus.com">S. Grimault</a>
  */
-public class LayersSourceUtils {
+public class LayersSettingsUtils {
 
-    private static final String TAG = LayersSourceUtils.class.getName();
+    private static final String TAG = LayersSettingsUtils.class.getName();
 
     @Nullable
-    public static LayersSource loadLayersSourceFromAssets(final Context context,
-                                                          @NonNull final String layersSourceName) {
-        final String assetResource = layersSourceName + ".json";
+    public static LayersSettings loadLayersSettingsFromAssets(final Context context,
+                                                              @NonNull final String layersSettingsName) {
+        final String assetResource = layersSettingsName + ".json";
 
         try {
-            return readLayersSource(new InputStreamReader(context.getAssets()
-                                                                 .open(assetResource)));
+            return readLayersSettings(new InputStreamReader(context.getAssets()
+                                                                   .open(assetResource)));
         }
         catch (IOException ioe) {
             Log.w(TAG,
@@ -45,25 +48,25 @@ public class LayersSourceUtils {
     }
 
     @Nullable
-    public static LayersSource readLayersSource(@NonNull final Reader in) throws
+    public static LayersSettings readLayersSettings(@NonNull final Reader in) throws
                                                                           IOException {
-        LayersSource layersSource = null;
+        LayersSettings layersSettings = null;
         JsonReader jsonReader = new JsonReader(in);
 
         // noinspection TryFinallyCanBeTryWithResources
         try {
             jsonReader.beginObject();
 
-            String layersSourceName = null;
+            String layersSettingsName = null;
             BoundingBoxE6 boundingBoxE6 = null;
-            LayerSource layerSource = null;
+            LayersSource layersSource = null;
 
             while (jsonReader.hasNext()) {
                 final String name = jsonReader.nextName();
 
                 switch (name) {
                     case "name":
-                        layersSourceName = jsonReader.nextString();
+                        layersSettingsName = jsonReader.nextString();
                         break;
                     case "bbox":
                         jsonReader.beginArray();
@@ -94,24 +97,26 @@ public class LayersSourceUtils {
                     case "layers":
                         jsonReader.beginObject();
 
-                        String base = null;
-                        final List<String> layers = new ArrayList<>();
+                        LayerSource base = null;
+                        final List<LayerSource> layers = new ArrayList<>();
 
                         while (jsonReader.hasNext()) {
                             final String nameForLayers = jsonReader.nextName();
 
                             switch (nameForLayers) {
                                 case "base":
-                                    base = jsonReader.nextString();
+                                    base = new LayerSource(jsonReader.nextString());
                                     break;
                                 case "layers":
                                     jsonReader.beginArray();
 
                                     while (jsonReader.hasNext()) {
                                         final String layerSourceName = jsonReader.nextString();
+                                        final Double level = parseLevel(layerSourceName);
 
-                                        if (!TextUtils.isEmpty(layerSourceName)) {
-                                            layers.add(layerSourceName);
+                                        if (!TextUtils.isEmpty(layerSourceName) && (level != null)) {
+                                            layers.add(new LayerSource(layerSourceName,
+                                                                       level));
                                         }
                                     }
 
@@ -121,25 +126,45 @@ public class LayersSourceUtils {
 
                         jsonReader.endObject();
 
-                        if (!TextUtils.isEmpty(base)) {
-                            layerSource = new LayerSource(base,
-                                                          layers);
+                        if (base != null) {
+                            layersSource = new LayersSource(base,
+                                                            layers);
                         }
 
                         break;
                 }
             }
 
-            if (!TextUtils.isEmpty(layersSourceName) && (boundingBoxE6 != null) && (layerSource != null)) {
-                layersSource = new LayersSource(layersSourceName,
-                                                boundingBoxE6,
-                                                layerSource);
+            if (!TextUtils.isEmpty(layersSettingsName) && (boundingBoxE6 != null) && (layersSource != null)) {
+                layersSettings = new LayersSettings(layersSettingsName,
+                                                    boundingBoxE6,
+                                                    layersSource);
             }
         }
         finally {
             jsonReader.close();
         }
 
-        return layersSource;
+        return layersSettings;
+    }
+
+    @Nullable
+    private static Double parseLevel(@NonNull final String layer) {
+        Double level = null;
+
+        final Pattern patternLevel = Pattern.compile("^\\p{Alpha}+_(-?\\d.\\d+).*");
+        final Matcher matcherLevel = patternLevel.matcher(layer);
+
+        if (matcherLevel.find() && matcherLevel.groupCount() == 1) {
+            try {
+                level = Double.valueOf(matcherLevel.group(1));
+            }
+            catch (NumberFormatException nfe) {
+                Log.w(TAG,
+                      nfe.getMessage());
+            }
+        }
+
+        return level;
     }
 }

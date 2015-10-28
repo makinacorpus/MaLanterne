@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- TODO: hardcoded layers settings to load -->
+    <string name="layers_settings">gdl</string>
+
+</resources>

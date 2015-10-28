@@ -4,32 +4,33 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
 
-import org.osmdroid.util.BoundingBoxE6;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Describes layers source.
+ * Describes a set of {@link LayerSource}.
  *
  * @author <a href="mailto:sebastien.grimault@makina-corpus.com">S. Grimault</a>
  */
 public class LayersSource
         implements Parcelable {
 
-    public String name;
-    public BoundingBoxE6 boundingBoxE6;
-    public LayerSource layerSource;
+    @NonNull
+    public final LayerSource base;
 
-    public LayersSource(@NonNull final String name,
-                        @NonNull final BoundingBoxE6 boundingBoxE6,
-                        @NonNull final LayerSource layerSource) {
-        this.name = name;
-        this.boundingBoxE6 = boundingBoxE6;
-        this.layerSource = layerSource;
+    @NonNull
+    public final List<LayerSource> layers = new ArrayList<>();
+
+    public LayersSource(@NonNull final LayerSource base,
+                        @NonNull final List<LayerSource> layers) {
+        this.base = base;
+        this.layers.addAll(layers);
     }
 
     protected LayersSource(Parcel source) {
-        name = source.readString();
-        boundingBoxE6 = source.readParcelable(BoundingBoxE6.class.getClassLoader());
-        layerSource = source.readParcelable(LayerSource.class.getClassLoader());
+        base = source.readParcelable(LayerSource.class.getClassLoader());
+        source.readTypedList(layers,
+                             LayerSource.CREATOR);
     }
 
     @Override
@@ -40,11 +41,9 @@ public class LayersSource
     @Override
     public void writeToParcel(Parcel dest,
                               int flags) {
-        dest.writeString(name);
-        dest.writeParcelable(boundingBoxE6,
+        dest.writeParcelable(base,
                              flags);
-        dest.writeParcelable(layerSource,
-                             flags);
+        dest.writeTypedList(layers);
     }
 
     public static final Parcelable.Creator<LayersSource> CREATOR = new Parcelable.Creator<LayersSource>() {

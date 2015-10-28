@@ -3,6 +3,7 @@ package com.makina.osmnav.ui.activity;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
+import com.makina.osmnav.MainApplication;
 import com.makina.osmnav.R;
 import com.makina.osmnav.ui.fragment.MapFragment;
 
@@ -22,10 +23,14 @@ public class MainActivity
         setContentView(R.layout.activity_single);
 
         if (savedInstanceState == null) {
-            getSupportFragmentManager().beginTransaction()
-                                       .replace(R.id.container,
-                                                MapFragment.newInstance())
-                                       .commit();
+            final MainApplication mainApplication = MainApplication.getInstance();
+
+            if (mainApplication != null) {
+                getSupportFragmentManager().beginTransaction()
+                                           .replace(R.id.container,
+                                                    MapFragment.newInstance(mainApplication.getLayersSettings()))
+                                           .commit();
+            }
         }
     }
 }

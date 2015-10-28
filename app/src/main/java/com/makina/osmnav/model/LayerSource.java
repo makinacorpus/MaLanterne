@@ -4,15 +4,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
-
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Describes a layer source and its indoor levels.
@@ -22,41 +13,26 @@ import java.util.regex.Pattern;
 public class LayerSource
         implements Parcelable {
 
-    private static final String TAG = LayerSource.class.getName();
+    @NonNull
+    public final String source;
 
-    public String base;
-    public final List<String> layers = new ArrayList<>();
-    public final Set<Double> levels = new TreeSet<>(new Comparator<Double>() {
-        @Override
-        public int compare(Double lhs,
-                           Double rhs) {
-            return Double.compare(rhs,
-                                  lhs);
-        }
-    });
+    @Nullable
+    public final Double level;
 
-    public LayerSource(@NonNull final String base,
-                       @NonNull final List<String> layers) {
-        this.base = base;
+    public LayerSource(@NonNull final String source) {
+        this(source,
+             null);
+    }
 
-        for (String layer : layers) {
-            final Double level = parseLevel(layer);
-
-            if (level == null) {
-                Log.w(TAG,
-                      "wrong layer name: " + layer);
-
-                continue;
-            }
-
-            this.layers.add(layer);
-            this.levels.add(level);
-        }
+    public LayerSource(@NonNull final String source,
+                       @Nullable final Double level) {
+        this.source = source;
+        this.level = level;
     }
 
     protected LayerSource(Parcel source) {
-        this(source.readString(),
-             source.createStringArrayList());
+        this.source = source.readString();
+        this.level = (Double) source.readSerializable();
     }
 
     @Override
@@ -67,28 +43,36 @@ public class LayerSource
     @Override
     public void writeToParcel(Parcel dest,
                               int flags) {
-        dest.writeString(base);
-        dest.writeStringList(layers);
+        dest.writeString(source);
+        dest.writeSerializable(level);
     }
 
-    @Nullable
-    private Double parseLevel(@NonNull final String layer) {
-        Double level = null;
-
-        final Pattern patternLevel = Pattern.compile("^\\p{Alpha}+_(-?\\d.\\d+).*");
-        final Matcher matcherLevel = patternLevel.matcher(layer);
-
-        if (matcherLevel.find() && matcherLevel.groupCount() == 1) {
-            try {
-                level = Double.valueOf(matcherLevel.group(1));
-            }
-            catch (NumberFormatException nfe) {
-                Log.w(TAG,
-                      nfe.getMessage());
-            }
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
         }
 
-        return level;
+        if (!(o instanceof LayerSource)) {
+            return false;
+        }
+
+        LayerSource that = (LayerSource) o;
+
+        // noinspection SimplifiableIfStatement
+        if (!source.equals(that.source)) {
+            return false;
+        }
+
+        return !(level != null ? !level.equals(that.level) : that.level != null);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = source.hashCode();
+        result = 31 * result + (level != null ? level.hashCode() : 0);
+
+        return result;
     }
 
     public static final Parcelable.Creator<LayerSource> CREATOR = new Parcelable.Creator<LayerSource>() {

@@ -4,6 +4,7 @@
 
     <string name="action_select_level">level: %1$s</string>
 
+    <string name="toast_no_layers_settings_found">Unable to load the layers settings</string>
     <string name="toast_mbtiles_load_failed">Unable to load MBTiles</string>
     <string name="toast_geopoint">GeoPoint: %1$s</string>
 

@@ -18,6 +18,9 @@ import com.makina.osmnav.R;
 import com.makina.osmnav.map.MBTilesModuleProvider;
 import com.makina.osmnav.map.MBTilesProvider;
 import com.makina.osmnav.map.MapLoggerListener;
+import com.makina.osmnav.model.LayerSource;
+import com.makina.osmnav.model.LayersSettings;
+import com.makina.osmnav.model.LayersSource;
 import com.makina.osmnav.ui.widget.LevelsFilterNavigationListView;
 import com.makina.osmnav.util.FileUtils;
 
@@ -29,14 +32,12 @@ import org.osmdroid.bonuspack.overlays.MapEventsReceiver;
 import org.osmdroid.tileprovider.modules.MapTileModuleProviderBase;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.tileprovider.util.SimpleRegisterReceiver;
-import org.osmdroid.util.BoundingBoxE6;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.TilesOverlay;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -53,11 +54,7 @@ public class MapFragment
     // FIXME: hardcoded tile size (in px)
     private static final int TILE_SIZE = 512;
 
-    // FIXME: hardcoded bounding box
-    private static final BoundingBoxE6 MBTILES_BOUNDING_BOX = new BoundingBoxE6(48.8487,
-                                                                                2.3866,
-                                                                                48.8368,
-                                                                                2.3664);
+    private static final String ARG_LAYERS_SETTINGS = "ARG_LAYERS_SETTINGS";
 
     private static final String STATE_MAP_POSITION = "STATE_MAP_POSITION";
     private static final String STATE_MAP_ZOOM_LEVEL = "STATE_MAP_ZOOM_LEVEL";
@@ -65,6 +62,7 @@ public class MapFragment
 
     private MapView mMapView;
 
+    private LayersSettings mLayersSettings;
     private IGeoPoint mMapCenter;
     private int mZoomLevel;
     private double mIndoorLevel;
@@ -79,9 +77,14 @@ public class MapFragment
      *
      * @return a new instance of fragment {@link MapFragment}.
      */
-    public static MapFragment newInstance() {
+    public static MapFragment newInstance(@Nullable final LayersSettings layersSettings) {
         final MapFragment fragment = new MapFragment();
         final Bundle args = new Bundle();
+
+        if (layersSettings != null) {
+            args.putParcelable(ARG_LAYERS_SETTINGS,
+                               layersSettings);
+        }
 
         fragment.setArguments(args);
 
@@ -92,8 +95,12 @@ public class MapFragment
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        mLayersSettings = getArguments().getParcelable(ARG_LAYERS_SETTINGS);
+
         if (savedInstanceState == null) {
-            mMapCenter = MBTILES_BOUNDING_BOX.getCenter();
+            // FIXME: hardcoded default map position
+            mMapCenter = mLayersSettings == null ? new GeoPoint(48.853307d,
+                                                                2.348864d) : mLayersSettings.boundingBoxE6.getCenter();
             // FIXME: default hardcoded zoom level
             mZoomLevel = 15;
             // as default indoor level
@@ -111,7 +118,7 @@ public class MapFragment
     public View onCreateView(LayoutInflater inflater,
                              ViewGroup container,
                              Bundle savedInstanceState) {
-        mMapView = setupMap();
+        mMapView = setupMapView();
 
         return mMapView;
     }
@@ -135,6 +142,11 @@ public class MapFragment
 
     @Override
     public boolean longPressHelper(GeoPoint geoPoint) {
+        if (BuildConfig.DEBUG) {
+            Log.d(TAG,
+                  "longPressHelper: " + "lat= " + geoPoint.getLatitude() + ", lon=" + geoPoint.getLongitude());
+        }
+
         Toast.makeText(getContext(),
                        getString(R.string.toast_geopoint,
                                  "lat= " + geoPoint.getLatitude() + ", lon=" + geoPoint.getLongitude()),
@@ -144,79 +156,97 @@ public class MapFragment
         return true;
     }
 
-    private MapView setupMap() {
+    private MapView setupMapView() {
         final MapView mapView;
 
-        final DefaultResourceProxyImpl resourceProxy = new DefaultResourceProxyImpl(getContext().getApplicationContext());
-
-        // FIXME: hardcoded default MBTiles source
-        final MapTileModuleProviderBase baseModuleProvider = getMBTilesProvider("gdl.mbtiles",
-                                                                                null);
-
-        if (baseModuleProvider == null) {
-            // failed to load the MBTiles as file, use the default configuration
-            mapView = new MapView(getContext(),
-                                  TILE_SIZE,
-                                  resourceProxy);
-            mapView.setTileSource(TileSourceFactory.MAPNIK);
+        if (mLayersSettings == null) {
+            mapView = setupDefaultMapView();
 
             Toast.makeText(getContext(),
-                           getString(R.string.toast_mbtiles_load_failed),
+                           getString(R.string.toast_no_layers_settings_found),
                            Toast.LENGTH_LONG)
                  .show();
         }
         else {
-            final MBTilesProvider baseProviders = MBTilesProvider.createFromProviders(TILE_SIZE,
-                                                                                  baseModuleProvider);
-            baseProviders.setSelectedIndoorLevel(mIndoorLevel);
+            final MapTileModuleProviderBase baseModuleProvider = getMBTilesProvider(mLayersSettings.layersSource.base);
 
-            mapView = new MapView(getContext(),
-                                  TILE_SIZE,
-                                  resourceProxy,
-                                  baseProviders);
+            if (baseModuleProvider == null) {
+                // failed to load the MBTiles as file, use the default configuration
+                mapView = setupDefaultMapView();
 
-            mapView.setScrollableAreaLimit(MBTILES_BOUNDING_BOX);
+                Toast.makeText(getContext(),
+                               getString(R.string.toast_mbtiles_load_failed),
+                               Toast.LENGTH_LONG)
+                     .show();
+            }
+            else {
+                final MBTilesProvider baseProviders = MBTilesProvider.createFromProviders(TILE_SIZE,
+                                                                                          baseModuleProvider);
 
-            final List<MapTileModuleProviderBase> levelModuleProviders = loadLevelModuleProviders();
+                mapView = new MapView(getContext(),
+                                      TILE_SIZE,
+                                      new DefaultResourceProxyImpl(getContext().getApplicationContext()),
+                                      baseProviders);
 
-            if (!levelModuleProviders.isEmpty()) {
-                final MBTilesProvider levelProviders = MBTilesProvider.createFromProviders(TILE_SIZE,
-                                                                                           levelModuleProviders.toArray(new MapTileModuleProviderBase[levelModuleProviders.size()]));
-                levelProviders.setSelectedIndoorLevel(mIndoorLevel);
+                mapView.setScrollableAreaLimit(mLayersSettings.boundingBoxE6);
 
-                final TilesOverlay tilesOverlay = new TilesOverlay(levelProviders,
-                                                                   getContext());
-                tilesOverlay.setLoadingBackgroundColor(Color.TRANSPARENT);
-                mapView.getOverlays()
-                       .add(tilesOverlay);
+                final List<MapTileModuleProviderBase> levelModuleProviders = loadLevelModuleProviders(mLayersSettings.layersSource);
 
-                final LevelsFilterNavigationListView levelsFilterNavigationListView = new LevelsFilterNavigationListView(((AppCompatActivity) getActivity()).getSupportActionBar());
-                levelsFilterNavigationListView.setDefaultLevel(mIndoorLevel);
-                // FIXME: hardcoded available levels
-                levelsFilterNavigationListView.setLevels(Arrays.asList(2d,
-                                                                       1d,
-                                                                       0d,
-                                                                       -0.25d,
-                                                                       -0.5d,
-                                                                       -0.75d,
-                                                                       -1d,
-                                                                       -2d,
-                                                                       -3d));
-                levelsFilterNavigationListView.setLevelsFilterViewCallback(new LevelsFilterNavigationListView.LevelsFilterViewCallback() {
-                    @Override
-                    public void onLevelSelected(double level) {
-                        mIndoorLevel = level;
+                if (!levelModuleProviders.isEmpty()) {
+                    final MBTilesProvider levelProviders = MBTilesProvider.createFromProviders(TILE_SIZE,
+                                                                                               levelModuleProviders.toArray(new MapTileModuleProviderBase[levelModuleProviders.size()]));
+                    levelProviders.setSelectedIndoorLevel(mIndoorLevel);
 
-                        levelProviders.setSelectedIndoorLevel(level);
-                        mapView.invalidate();
-                        mapView.getController()
-                               .animateTo(mMapView.getMapCenter());
+                    final TilesOverlay tilesOverlay = new TilesOverlay(levelProviders,
+                                                                       getContext());
+                    tilesOverlay.setLoadingBackgroundColor(Color.TRANSPARENT);
+                    mapView.getOverlays()
+                           .add(tilesOverlay);
 
+                    final LevelsFilterNavigationListView levelsFilterNavigationListView = new LevelsFilterNavigationListView(((AppCompatActivity) getActivity()).getSupportActionBar());
+                    levelsFilterNavigationListView.setDefaultLevel(mIndoorLevel);
+
+                    final List<Double> levels = new ArrayList<>();
+
+                    for (MapTileModuleProviderBase levelModuleProvider : levelModuleProviders) {
+                        if (levelModuleProvider instanceof MBTilesModuleProvider) {
+                            levels.add(((MBTilesModuleProvider) levelModuleProvider).getIndoorLevel());
+                        }
                     }
-                });
+
+                    levelsFilterNavigationListView.setLevels(levels);
+                    levelsFilterNavigationListView.setLevelsFilterViewCallback(new LevelsFilterNavigationListView.LevelsFilterViewCallback() {
+                        @Override
+                        public void onLevelSelected(double level) {
+                            mIndoorLevel = level;
+
+                            levelProviders.setSelectedIndoorLevel(level);
+                            mapView.invalidate();
+                            mapView.getController()
+                                   .animateTo(mMapView.getMapCenter());
+
+                        }
+                    });
+                }
             }
         }
 
+        configureMapView(mapView);
+
+        return mapView;
+    }
+
+    @NonNull
+    private MapView setupDefaultMapView() {
+        final MapView mapView = new MapView(getContext(),
+                                            TILE_SIZE,
+                                            new DefaultResourceProxyImpl(getContext().getApplicationContext()));
+        mapView.setTileSource(TileSourceFactory.MAPNIK);
+
+        return mapView;
+    }
+
+    private void configureMapView(@NonNull final MapView mapView) {
         mapView.setMultiTouchControls(true);
         mapView.setTilesScaledToDpi(false);
 
@@ -225,7 +255,11 @@ public class MapFragment
         }
 
         final IMapController mapController = mapView.getController();
-        mapController.setCenter(mMapCenter);
+
+        if (mMapCenter != null) {
+            mapController.setCenter(mMapCenter);
+        }
+
         mapController.setZoom(mZoomLevel);
 
         final MapEventsOverlay mapEventsOverlay = new MapEventsOverlay(getContext(),
@@ -235,43 +269,19 @@ public class MapFragment
         mapView.getOverlays()
                .add(0,
                     mapEventsOverlay);
-
-        return mapView;
     }
 
     @NonNull
-    private List<MapTileModuleProviderBase> loadLevelModuleProviders() {
+    private List<MapTileModuleProviderBase> loadLevelModuleProviders(@NonNull final LayersSource layersSource) {
         final List<MapTileModuleProviderBase> moduleProviders = new ArrayList<>();
 
-        // FIXME: hardcoded MBTiles sources
-        final List<String> mbTilesSources = Arrays.asList("gdl_2.0.mbtiles",
-                                                          "gdl_1.0.mbtiles",
-                                                          "gdl_0.0.mbtiles",
-                                                          "gdl_-0.25.mbtiles",
-                                                          "gdl_-0.5.mbtiles",
-                                                          "gdl_-0.75.mbtiles",
-                                                          "gdl_-1.0.mbtiles",
-                                                          "gdl_-2.0.mbtiles",
-                                                          "gdl_-3.0.mbtiles");
-
-        for (String mbTilesSource : mbTilesSources) {
-            Double level = null;
-            final String[] tokens = mbTilesSource.split("_");
-
-            if (tokens.length > 1) {
-                final String levelsAsString = tokens[1].split(".mbtiles")[0];
-
-                try {
-                    level = Double.valueOf(levelsAsString);
-                }
-                catch (NumberFormatException nfe) {
-                    Log.w(TAG,
-                          nfe.getMessage());
-                }
+        for (LayerSource layerSource : layersSource.layers) {
+            if (layerSource.level == null) {
+                continue;
             }
 
-            final MapTileModuleProviderBase moduleProvider = getMBTilesProvider(mbTilesSource,
-                                                                                level);
+            final MapTileModuleProviderBase moduleProvider = getMBTilesProvider(layerSource);
+
             if (moduleProvider != null) {
                 moduleProviders.add(moduleProvider);
             }
@@ -281,21 +291,20 @@ public class MapFragment
     }
 
     @Nullable
-    private MBTilesModuleProvider getMBTilesProvider(@NonNull final String filename,
-                                                     @Nullable Double indoorLevel) {
+    private MBTilesModuleProvider getMBTilesProvider(@NonNull final LayerSource layerSource) {
         final File mbtiles = FileUtils.getFileFromApplicationStorage(getContext(),
-                                                                     filename);
+                                                                     layerSource.source);
 
         if ((mbtiles == null) || !mbtiles.exists()) {
             Log.w(TAG,
-                  "getMBTilesProvider: unable to load MBTiles '" + filename + "'");
+                  "getMBTilesProvider: unable to load MBTiles '" + layerSource.source + "'");
 
             return null;
         }
 
         final MBTilesModuleProvider moduleProvider = new MBTilesModuleProvider(new SimpleRegisterReceiver(getContext()),
                                                                                mbtiles);
-        moduleProvider.setIndoorLevel(indoorLevel);
+        moduleProvider.setIndoorLevel(layerSource.level);
 
         return moduleProvider;
     }
