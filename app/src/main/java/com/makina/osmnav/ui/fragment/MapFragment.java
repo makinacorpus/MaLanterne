@@ -6,6 +6,7 @@ import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -180,6 +181,8 @@ public class MapFragment
                      .show();
             }
             else {
+                updateTitle(mLayersSettings.name);
+
                 final MBTilesProvider baseProviders = MBTilesProvider.createFromProviders(TILE_SIZE,
                                                                                           baseModuleProvider);
 
@@ -307,5 +310,19 @@ public class MapFragment
         moduleProvider.setIndoorLevel(layerSource.level);
 
         return moduleProvider;
+    }
+
+    private void updateTitle(@NonNull final String title) {
+        final AppCompatActivity activity = (AppCompatActivity) getActivity();
+
+        if (activity != null) {
+            final ActionBar actionBar = activity.getSupportActionBar();
+
+            if (actionBar == null) {
+                return;
+            }
+
+            actionBar.setTitle(title);
+        }
     }
 }
