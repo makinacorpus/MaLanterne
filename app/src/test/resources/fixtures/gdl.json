@@ -1,0 +1,23 @@
+{
+    "name": "Paris Gare de Lyon",
+    "bbox": [
+        48.8487,
+        2.3866,
+        48.8368,
+        2.3664
+    ],
+    "layers": {
+        "base": "gdl.mbtiles",
+        "layers": [
+            "gdl_2.0.mbtiles",
+            "gdl_1.0.mbtiles",
+            "gdl_0.0.mbtiles",
+            "gdl_-0.25.mbtiles",
+            "gdl_-0.5.mbtiles",
+            "gdl_-0.75.mbtiles",
+            "gdl_-1.0.mbtiles",
+            "gdl_-2.0.mbtiles",
+            "gdl_-3.0.mbtiles"
+        ]
+    }
+}

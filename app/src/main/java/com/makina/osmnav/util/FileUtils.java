@@ -44,7 +44,7 @@ public class FileUtils {
      * @param filename filename to load as {@code File}
      *
      * @return the filename to load as {@code File} of {@code null} if the given filename cannot be
-     * load
+     * loaded
      */
     @Nullable
     public static File getFileFromApplicationStorage(Context context,
