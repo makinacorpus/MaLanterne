@@ -61,11 +61,13 @@ public class MapFragment
 
     private static final String STATE_MAP_POSITION = "STATE_MAP_POSITION";
     private static final String STATE_MAP_ZOOM_LEVEL = "STATE_MAP_ZOOM_LEVEL";
+    private static final String STATE_INDOOR_LEVEL = "STATE_INDOOR_LEVEL";
 
     private MapView mMapView;
 
     private IGeoPoint mMapCenter;
     private int mZoomLevel;
+    private double mIndoorLevel;
 
     public MapFragment() {
         // required empty public constructor
@@ -94,10 +96,13 @@ public class MapFragment
             mMapCenter = MBTILES_BOUNDING_BOX.getCenter();
             // FIXME: default hardcoded zoom level
             mZoomLevel = 15;
+            // as default indoor level
+            mIndoorLevel = 0d;
         }
         else {
             mMapCenter = savedInstanceState.getParcelable(STATE_MAP_POSITION);
             mZoomLevel = savedInstanceState.getInt(STATE_MAP_ZOOM_LEVEL);
+            mIndoorLevel = savedInstanceState.getDouble(STATE_INDOOR_LEVEL);
         }
     }
 
@@ -117,6 +122,8 @@ public class MapFragment
                                (Parcelable) mMapView.getMapCenter());
         outState.putInt(STATE_MAP_ZOOM_LEVEL,
                         mMapView.getZoomLevel());
+        outState.putDouble(STATE_INDOOR_LEVEL,
+                           mIndoorLevel);
 
         super.onSaveInstanceState(outState);
     }
@@ -161,7 +168,7 @@ public class MapFragment
         else {
             final MBTilesProvider baseProviders = MBTilesProvider.createFromProviders(TILE_SIZE,
                                                                                   baseModuleProvider);
-            baseProviders.setSelectedIndoorLevel(0.0d);
+            baseProviders.setSelectedIndoorLevel(mIndoorLevel);
 
             mapView = new MapView(getContext(),
                                   TILE_SIZE,
@@ -175,7 +182,7 @@ public class MapFragment
             if (!levelModuleProviders.isEmpty()) {
                 final MBTilesProvider levelProviders = MBTilesProvider.createFromProviders(TILE_SIZE,
                                                                                            levelModuleProviders.toArray(new MapTileModuleProviderBase[levelModuleProviders.size()]));
-                levelProviders.setSelectedIndoorLevel(0.0d);
+                levelProviders.setSelectedIndoorLevel(mIndoorLevel);
 
                 final TilesOverlay tilesOverlay = new TilesOverlay(levelProviders,
                                                                    getContext());
@@ -184,16 +191,7 @@ public class MapFragment
                        .add(tilesOverlay);
 
                 final LevelsFilterNavigationListView levelsFilterNavigationListView = new LevelsFilterNavigationListView(((AppCompatActivity) getActivity()).getSupportActionBar());
-                levelsFilterNavigationListView.setLevelsFilterViewCallback(new LevelsFilterNavigationListView.LevelsFilterViewCallback() {
-                    @Override
-                    public void onLevelSelected(double level) {
-                        levelProviders.setSelectedIndoorLevel(level);
-                        mapView.invalidate();
-                        mapView.getController()
-                               .animateTo(mMapView.getMapCenter());
-
-                    }
-                });
+                levelsFilterNavigationListView.setDefaultLevel(mIndoorLevel);
                 // FIXME: hardcoded available levels
                 levelsFilterNavigationListView.setLevels(Arrays.asList(2d,
                                                                        1d,
@@ -204,6 +202,18 @@ public class MapFragment
                                                                        -1d,
                                                                        -2d,
                                                                        -3d));
+                levelsFilterNavigationListView.setLevelsFilterViewCallback(new LevelsFilterNavigationListView.LevelsFilterViewCallback() {
+                    @Override
+                    public void onLevelSelected(double level) {
+                        mIndoorLevel = level;
+
+                        levelProviders.setSelectedIndoorLevel(level);
+                        mapView.invalidate();
+                        mapView.getController()
+                               .animateTo(mMapView.getMapCenter());
+
+                    }
+                });
             }
         }
 
