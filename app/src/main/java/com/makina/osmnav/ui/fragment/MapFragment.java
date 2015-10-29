@@ -103,7 +103,7 @@ public class MapFragment
             mMapCenter = mLayersSettings == null ? new GeoPoint(48.853307d,
                                                                 2.348864d) : mLayersSettings.boundingBoxE6.getCenter();
             // FIXME: default hardcoded zoom level
-            mZoomLevel = 15;
+            mZoomLevel = 16;
             // as default indoor level
             mIndoorLevel = 0d;
         }
