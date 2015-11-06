@@ -52,9 +52,6 @@ public class MapFragment
 
     private static final String TAG = MapFragment.class.getName();
 
-    // FIXME: hardcoded tile size (in px)
-    private static final int TILE_SIZE = 512;
-
     private static final String ARG_LAYERS_SETTINGS = "ARG_LAYERS_SETTINGS";
 
     private static final String STATE_MAP_POSITION = "STATE_MAP_POSITION";
@@ -103,7 +100,7 @@ public class MapFragment
             mMapCenter = mLayersSettings == null ? new GeoPoint(48.853307d,
                                                                 2.348864d) : mLayersSettings.boundingBoxE6.getCenter();
             // FIXME: default hardcoded zoom level
-            mZoomLevel = 16;
+            mZoomLevel = 17;
             // as default indoor level
             mIndoorLevel = 0d;
         }
@@ -183,11 +180,11 @@ public class MapFragment
             else {
                 updateTitle(mLayersSettings.name);
 
-                final MBTilesProvider baseProviders = MBTilesProvider.createFromProviders(TILE_SIZE,
+                final MBTilesProvider baseProviders = MBTilesProvider.createFromProviders(getTileSize(),
                                                                                           baseModuleProvider);
 
                 mapView = new MapView(getContext(),
-                                      TILE_SIZE,
+                                      getTileSize(),
                                       new DefaultResourceProxyImpl(getContext().getApplicationContext()),
                                       baseProviders);
 
@@ -196,7 +193,7 @@ public class MapFragment
                 final List<MapTileModuleProviderBase> levelModuleProviders = loadLevelModuleProviders(mLayersSettings.layersSource);
 
                 if (!levelModuleProviders.isEmpty()) {
-                    final MBTilesProvider levelProviders = MBTilesProvider.createFromProviders(TILE_SIZE,
+                    final MBTilesProvider levelProviders = MBTilesProvider.createFromProviders(getTileSize(),
                                                                                                levelModuleProviders.toArray(new MapTileModuleProviderBase[levelModuleProviders.size()]));
                     levelProviders.setSelectedIndoorLevel(mIndoorLevel);
 
@@ -242,7 +239,7 @@ public class MapFragment
     @NonNull
     private MapView setupDefaultMapView() {
         final MapView mapView = new MapView(getContext(),
-                                            TILE_SIZE,
+                                            getTileSize(),
                                             new DefaultResourceProxyImpl(getContext().getApplicationContext()));
         mapView.setTileSource(TileSourceFactory.MAPNIK);
 
@@ -324,5 +321,9 @@ public class MapFragment
 
             actionBar.setTitle(title);
         }
+    }
+
+    private int getTileSize() {
+        return getResources().getDimensionPixelSize(R.dimen.tile_size);
     }
 }
