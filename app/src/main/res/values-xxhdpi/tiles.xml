@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <integer name="tile_size">1024</integer>
+    <integer name="last_zoom_offset">1</integer>
+
+</resources>

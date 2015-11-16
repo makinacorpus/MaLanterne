@@ -76,6 +76,11 @@ public class MBTilesSource
         cursor.close();
         StreamUtils.closeStream(is);
 
+        if (BuildConfig.DEBUG) {
+            Log.d(TAG,
+                  "createFromFile: " + file.getName() + ", min zoom level found: " + minZoomLevel + ", max zoom level found: " + maxZoomLevel + ", tile size found: " + tileSize);
+        }
+
         return new MBTilesSource(minZoomLevel > -1 ? minZoomLevel : DEFAULT_MIN_ZOOM_LEVEL,
                                  maxZoomLevel > -1 ? maxZoomLevel : DEFAULT_MAX_ZOOM_LEVEL,
                                  tileSize > -1 ? tileSize : DEFAULT_TILE_SIZE,

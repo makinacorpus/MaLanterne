@@ -103,6 +103,10 @@ public class MapFragment
             mZoomLevel = 17;
             // as default indoor level
             mIndoorLevel = 0d;
+
+            if (BuildConfig.DEBUG) {
+                Log.d(TAG, "default tile size: " + getTileSize());
+            }
         }
         else {
             mMapCenter = savedInstanceState.getParcelable(STATE_MAP_POSITION);
@@ -189,6 +193,7 @@ public class MapFragment
                                       baseProviders);
 
                 mapView.setScrollableAreaLimit(mLayersSettings.boundingBoxE6);
+                mapView.setMaxZoomLevel(baseProviders.getMaximumZoomLevel() - getResources().getInteger(R.integer.last_zoom_offset));
 
                 final List<MapTileModuleProviderBase> levelModuleProviders = loadLevelModuleProviders(mLayersSettings.layersSource);
 
@@ -324,6 +329,6 @@ public class MapFragment
     }
 
     private int getTileSize() {
-        return getResources().getDimensionPixelSize(R.dimen.tile_size);
+        return getResources().getInteger(R.integer.tile_size);
     }
 }
