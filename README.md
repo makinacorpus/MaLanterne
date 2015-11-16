@@ -40,9 +40,7 @@ You can combine a full build and deploy the application in a same command:
 MBTiles sources should be copied locally on the device.
 First create a new directory inside `/mnt/sdcard/Android/data/`:
 
-    adb shell
-    cd /mnt/sdcard/Android/data/
-    mkdir com.makina.osmnav
+    adb shell mkdir /mnt/sdcard/Android/data/com.makina.osmnav/
 
 then copy all `*.mbtiles` within this directory:
 
