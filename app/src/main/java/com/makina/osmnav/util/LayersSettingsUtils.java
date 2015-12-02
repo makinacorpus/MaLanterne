@@ -31,17 +31,15 @@ public class LayersSettingsUtils {
     private static final String TAG = LayersSettingsUtils.class.getName();
 
     @Nullable
-    public static LayersSettings loadLayersSettingsFromAssets(final Context context,
-                                                              @NonNull final String layersSettingsName) {
-        final String assetResource = layersSettingsName + ".json";
-
+    public static LayersSettings loadLayersSettingsFromAssets(final Context context) {
         try {
             return readLayersSettings(new InputStreamReader(context.getAssets()
-                                                                   .open(assetResource)));
+                                                                   .open("mbtiles.json")));
         }
         catch (IOException ioe) {
             Log.w(TAG,
-                  "I/O error: " + assetResource);
+                  "I/O error",
+                  ioe);
         }
 
         return null;
@@ -49,7 +47,7 @@ public class LayersSettingsUtils {
 
     @Nullable
     public static LayersSettings readLayersSettings(@NonNull final Reader in) throws
-                                                                          IOException {
+                                                                              IOException {
         LayersSettings layersSettings = null;
         JsonReader jsonReader = new JsonReader(in);
 
@@ -88,9 +86,9 @@ public class LayersSettingsUtils {
 
                         if (i == 4) {
                             boundingBoxE6 = new BoundingBoxE6(bboxArray[0],
-                                                     bboxArray[1],
-                                                     bboxArray[2],
-                                                     bboxArray[3]);
+                                                              bboxArray[1],
+                                                              bboxArray[2],
+                                                              bboxArray[3]);
                         }
 
                         break;

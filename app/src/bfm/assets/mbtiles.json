@@ -1,0 +1,24 @@
+{
+    "name": "Bibliothèque François Mitterrand",
+    "bbox": [
+        48.83111,
+        2.38078,
+        48.82679,
+        2.37403
+    ],
+    "layers": {
+        "base": "bfm.mbtiles",
+        "layers": [
+            "bfm_2.0.mbtiles",
+            "bfm_1.0.mbtiles",
+            "bfm_0.0.mbtiles",
+            "bfm_-0.4.mbtiles",
+            "bfm_-0.5.mbtiles",
+            "bfm_-1.0.mbtiles",
+            "bfm_-1.5.mbtiles",
+            "bfm_-2.0.mbtiles",
+            "bfm_-2.5.mbtiles",
+            "bfm_-3.0.mbtiles"
+        ]
+    }
+}

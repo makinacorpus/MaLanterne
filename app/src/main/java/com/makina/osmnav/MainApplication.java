@@ -54,8 +54,7 @@ public class MainApplication
         sInstance = new WeakReference<>(this);
 
         // TODO: use Loader instead
-        mLayersSettings = LayersSettingsUtils.loadLayersSettingsFromAssets(this,
-                                                                           getString(R.string.layers_settings));
+        mLayersSettings = LayersSettingsUtils.loadLayersSettingsFromAssets(this);
     }
 
     @Nullable

@@ -1,6 +1,6 @@
 apply plugin: 'com.android.application'
 
-version = "0.0.4"
+version = "0.0.5"
 
 android {
     compileSdkVersion 23
@@ -37,6 +37,20 @@ android {
             }
         }
     }
+
+    productFlavors {
+        bfm {
+            applicationId "com.makina.osmnav.bfm"
+        }
+
+        gdl {
+            applicationId "com.makina.osmnav.gdl"
+        }
+
+        amiens {
+            applicationId "com.makina.osmnav.amiens"
+        }
+    }
 }
 
 repositories {
@@ -49,15 +63,15 @@ repositories {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
 
-    compile 'com.android.support:appcompat-v7:23.1.0'
-    compile 'com.android.support:design:23.1.0'
+    compile 'com.android.support:appcompat-v7:23.1.1'
+    compile 'com.android.support:design:23.1.1'
 
     compile 'org.osmdroid:osmdroid-android:4.3'
     compile 'org.slf4j:slf4j-simple:1.6.1'
 
     compile(name:'osmbonuspack_v5.4', ext:'aar')
     compile 'org.apache.commons:commons-lang3:3.3.2'
-    compile 'com.google.code.gson:gson:2.3'
+    compile 'com.google.code.gson:gson:2.4'
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.robolectric:robolectric:2.4'

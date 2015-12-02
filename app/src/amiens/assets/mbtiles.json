@@ -1,0 +1,17 @@
+{
+    "name": "Amiens",
+    "bbox": [
+        49.89286,
+        2.31174,
+        49.88885,
+        2.30520
+    ],
+    "layers": {
+        "base": "amiens.mbtiles",
+        "layers": [
+            "amiens_1.0.mbtiles",
+            "amiens_0.0.mbtiles",
+            "amiens_-1.0.mbtiles"
+        ]
+    }
+}

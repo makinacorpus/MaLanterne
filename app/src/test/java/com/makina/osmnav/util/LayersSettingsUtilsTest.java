@@ -28,7 +28,7 @@ public class LayersSettingsUtilsTest {
     @Test
     public void testReadLayersSettings() throws
                                          Exception {
-        final InputStream inputStream = TestHelper.getFixtureAsStream("gdl.json");
+        final InputStream inputStream = TestHelper.getFixtureAsStream("mbtiles.json");
 
         assertNotNull(inputStream);
 
